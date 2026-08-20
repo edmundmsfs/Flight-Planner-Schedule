@@ -1,0 +1,16 @@
+export const LOCAL_AIRPORTS = [
+  { icao: 'WIII', name: 'Soekarno-Hatta International Airport', city: 'Jakarta', lat: -6.1256, lon: 106.6558, runway: 3905 },
+  { icao: 'WADD', name: 'Ngurah Rai International Airport', city: 'Bali', lat: -8.7482, lon: 115.1672, runway: 3000 },
+  { icao: 'WARR', name: 'Juanda International Airport', city: 'Surabaya', lat: -7.3798, lon: 112.7868, runway: 3000 },
+  { icao: 'WAME', name: 'Kualanamu International Airport', city: 'Medan', lat: 3.6422, lon: 98.8853, runway: 3750 },
+  { icao: 'WAHQ', name: 'Sultan Hasanuddin International Airport', city: 'Makassar', lat: -5.0616, lon: 119.5542, runway: 2500 },
+  { icao: 'WARJ', name: 'Adisumarmo International Airport', city: 'Solo', lat: -7.5152, lon: 110.7569, runway: 2600 },
+  { icao: 'WARP', name: 'Achmad Yani International Airport', city: 'Semarang', lat: -6.9724, lon: 110.3753, runway: 2600 },
+  { icao: 'WIOO', name: 'Supadio International Airport', city: 'Pontianak', lat: -0.1507, lon: 109.3711, runway: 2250 },
+  { icao: 'WAOO', name: 'Syamsudin Noor International Airport', city: 'Banjarmasin', lat: -3.4424, lon: 114.7625, runway: 2250 },
+  { icao: 'WIDD', name: 'Hang Nadim International Airport', city: 'Batam', lat: 1.0456, lon: 104.2217, runway: 4000 },
+  { icao: 'WADL', name: 'Lombok International Airport', city: 'Lombok', lat: -8.7582, lon: 116.2750, runway: 2750 },
+  { icao: 'WIPA', name: 'Sultan Thaha Airport', city: 'Jambi', lat: -1.6380, lon: 103.6440, runway: 2400 },
+  { icao: 'WITT', name: 'Sultan Iskandar Muda International Airport', city: 'Banda Aceh', lat: 5.5225, lon: 95.4003, runway: 3500 },
+  { icao: 'WAKK', name: 'Sultan Hasanuddin International Airport', city: 'Makassar', lat: 5.0644, lon: 119.5347, runway: 2500 },
+]
