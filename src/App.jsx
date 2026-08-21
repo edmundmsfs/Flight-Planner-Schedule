@@ -1,29 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useAirports } from './hooks/useAirports'
 import { useSchedules } from './hooks/useSchedules'
+import ErrorBoundary from './components/ErrorBoundary'
 import AuthView from './components/AuthView'
 import Sidebar from './components/Sidebar'
 import CalendarView from './components/CalendarView'
+import TimelineView from './components/TimelineView'
+import ScheduleMapView from './components/ScheduleMapView'
 import FlightPlanner from './components/FlightPlanner'
 import AirportTable from './components/AirportTable'
 import HistoryView from './components/HistoryView'
+import DashboardView from './components/DashboardView'
+import RouteExplorer from './components/RouteExplorer'
+import WeatherStation from './components/WeatherStation'
+
 
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  )
+}
+
+function AppContent() {
   const { session, loading, authLoading, captainName, signIn, signUp, signOut } = useAuth()
   const { airports, loading: airportsLoading } = useAirports(session)
-  const { schedules, addSchedules, deleteSchedulesByDate, clearAll } = useSchedules(session)
+  const { schedules, addSchedules, deleteSchedulesByDate, deleteSchedule, updateSchedule, clearAll } = useSchedules(session)
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [activeMenu, setActiveMenu] = useState('planner')
+  const [activeMenu, setActiveMenu] = useState('myschedule')
+  const [scheduleView, setScheduleView] = useState('calendar')
   const [generating, setGenerating] = useState(false)
   const [toast, setToast] = useState(null)
   const [previewLegs, setPreviewLegs] = useState([])
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3000)
   }
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const next = !prev
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+      return next
+    })
+  }
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   const handleGenerate = async (legs) => {
     setGenerating(true)
@@ -59,6 +88,8 @@ export default function App() {
         onMenuChange={setActiveMenu}
         captainName={captainName}
         onLogout={signOut}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
       />
 
       <main className="main-content">
@@ -83,35 +114,59 @@ export default function App() {
             </div>
             <p className="welcome-subtitle">Welcome back to your Operations Control Center.</p>
             <div className="welcome-stats">
-              <div className="welcome-stat">
-                <span className="welcome-stat-icon">✈️</span>
-                <div>
-                  <span className="welcome-stat-value">{schedules.length}</span>
-                  <span className="welcome-stat-label">Flights Today</span>
-                </div>
-              </div>
-              <div className="welcome-stat-divider" />
-              <div className="welcome-stat">
-                <span className="welcome-stat-icon">🛫</span>
-                <div>
-                  <span className="welcome-stat-value">{new Set(schedules.map(s => s.departure)).size || '—'}</span>
-                  <span className="welcome-stat-label">Airports</span>
-                </div>
-              </div>
-              <div className="welcome-stat-divider" />
-              <div className="welcome-stat">
-                <span className="welcome-stat-icon">⏱️</span>
-                <div>
-                  <span className="welcome-stat-value">{schedules.reduce((sum, s) => sum + s.block_time, 0).toFixed(1) || '0.0'}h</span>
-                  <span className="welcome-stat-label">Block Time</span>
-                </div>
-              </div>
+              {(() => {
+                const today = new Date().toISOString().split('T')[0]
+                const todaySchedules = schedules.filter(s => s.date === today)
+                return (<>
+                  <div className="welcome-stat">
+                    <span className="welcome-stat-icon">✈️</span>
+                    <div>
+                      <span className="welcome-stat-value">{todaySchedules.length}</span>
+                      <span className="welcome-stat-label">Flights Today</span>
+                    </div>
+                  </div>
+                  <div className="welcome-stat-divider" />
+                  <div className="welcome-stat">
+                    <span className="welcome-stat-icon">🛫</span>
+                    <div>
+                      <span className="welcome-stat-value">{new Set(todaySchedules.map(s => s.departure)).size || '—'}</span>
+                      <span className="welcome-stat-label">Airports</span>
+                    </div>
+                  </div>
+                  <div className="welcome-stat-divider" />
+                  <div className="welcome-stat">
+                    <span className="welcome-stat-icon">⏱️</span>
+                    <div>
+                      <span className="welcome-stat-value">{todaySchedules.reduce((sum, s) => sum + s.block_time, 0).toFixed(1) || '0.0'}h</span>
+                      <span className="welcome-stat-label">Block Time</span>
+                    </div>
+                  </div>
+                </>)
+              })()}
             </div>
           </div>
         </div>
 
         {activeMenu === 'myschedule' && (
-          <CalendarView schedules={schedules} />
+          <div className="sched">
+            <div className="sched-view-tabs">
+              <button className={`sched-view-tab ${scheduleView === 'calendar' ? 'sched-view-tab--active' : ''}`} onClick={() => setScheduleView('calendar')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Calendar
+              </button>
+              <button className={`sched-view-tab ${scheduleView === 'timeline' ? 'sched-view-tab--active' : ''}`} onClick={() => setScheduleView('timeline')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Timeline
+              </button>
+              <button className={`sched-view-tab ${scheduleView === 'map' ? 'sched-view-tab--active' : ''}`} onClick={() => setScheduleView('map')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                Map
+              </button>
+            </div>
+            {scheduleView === 'calendar' && <CalendarView schedules={schedules} airports={airports} onDelete={deleteSchedule} onUpdate={updateSchedule} />}
+            {scheduleView === 'timeline' && <TimelineView schedules={schedules} airports={airports} onDelete={deleteSchedule} onUpdate={updateSchedule} />}
+            {scheduleView === 'map' && <ScheduleMapView schedules={schedules} airports={airports} />}
+          </div>
         )}
 
         {activeMenu === 'planner' && (
@@ -122,6 +177,18 @@ export default function App() {
             previewLegs={previewLegs}
             onPreviewLegs={setPreviewLegs}
           />
+        )}
+
+        {activeMenu === 'dashboard' && (
+          <DashboardView schedules={schedules} />
+        )}
+
+        {activeMenu === 'routes' && (
+          <RouteExplorer />
+        )}
+
+        {activeMenu === 'weather' && (
+          <WeatherStation />
         )}
 
         {activeMenu === 'airports' && (

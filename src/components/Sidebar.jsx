@@ -1,7 +1,10 @@
-export default function Sidebar({ isOpen, onToggle, activeMenu, onMenuChange, captainName, onLogout }) {
+export default function Sidebar({ isOpen, onToggle, activeMenu, onMenuChange, captainName, onLogout, darkMode, onToggleDarkMode }) {
   const menus = [
     { id: 'myschedule', icon: '📅', label: 'My Schedule' },
     { id: 'planner', icon: '✈️', label: 'Flight Planner' },
+    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+    { id: 'routes', icon: '🗺️', label: 'Route Explorer' },
+    { id: 'weather', icon: '🌦️', label: 'Weather Station' },
     { id: 'airports', icon: '🏢', label: 'Master Airports' },
     { id: 'history', icon: '🗄️', label: 'History Log' },
   ]
@@ -36,6 +39,10 @@ export default function Sidebar({ isOpen, onToggle, activeMenu, onMenuChange, ca
       </nav>
 
       <div className="sidebar-footer">
+        <button onClick={onToggleDarkMode} className="sidebar-theme-toggle" title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {darkMode ? '☀️' : '🌙'}
+          {isOpen && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
+        </button>
         <button onClick={onLogout} className="btn-logout">
           <span>🚪</span>
           {isOpen && <span>Logout</span>}

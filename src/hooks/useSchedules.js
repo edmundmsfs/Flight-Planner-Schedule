@@ -4,20 +4,28 @@ import { supabase } from '../supabase'
 export function useSchedules(session) {
   const [schedules, setSchedules] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!session) return
     let cancelled = false
     async function load() {
       setLoading(true)
-      const { data } = await supabase
+      setError(null)
+      const { data, error: fetchError } = await supabase
         .from('schedules')
         .select('*')
         .eq('user_id', session.user.id)
         .order('date', { ascending: true })
         .order('departure_time', { ascending: true })
-      if (!cancelled && data) setSchedules(data)
-      if (!cancelled) setLoading(false)
+      if (!cancelled) {
+        if (fetchError) {
+          console.warn('Schedules fetch error:', fetchError.message)
+          setError(fetchError.message)
+        }
+        if (data) setSchedules(data)
+        setLoading(false)
+      }
     }
     load()
     return () => { cancelled = true }
@@ -62,6 +70,36 @@ export function useSchedules(session) {
     return { error }
   }, [session])
 
+  const deleteSchedule = useCallback(async (id) => {
+    if (!session) return { error: 'Not authenticated' }
+    const { error } = await supabase
+      .from('schedules')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+    if (!error) {
+      setSchedules(prev => prev.filter(s => s.id !== id))
+    }
+    return { error }
+  }, [session])
+
+  const updateSchedule = useCallback(async (id, updates) => {
+    if (!session) return { error: 'Not authenticated' }
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s))
+    const { data, error } = await supabase
+      .from('schedules')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+      .select()
+    if (error) {
+      console.warn('Schedule update failed (kept local):', error.message)
+    } else if (data && data[0]) {
+      setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...data[0] } : s))
+    }
+    return { error, data: data?.[0] }
+  }, [session])
+
   const clearAll = useCallback(async () => {
     if (!session) return { error: 'Not authenticated' }
     const { error } = await supabase
@@ -72,5 +110,5 @@ export function useSchedules(session) {
     return { error }
   }, [session])
 
-  return { schedules, loading, addSchedules, deleteSchedulesByDate, clearAll }
+  return { schedules, loading, error, addSchedules, deleteSchedulesByDate, deleteSchedule, updateSchedule, clearAll }
 }

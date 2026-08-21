@@ -47,18 +47,27 @@ export function addTimeToDate(dateStr, timeStr, blockTimeHours) {
   return `${hh}:${mm}`
 }
 
-function minutesToTime(minutes) {
+export function minutesToTime(minutes) {
   const h = Math.floor(minutes / 60) % 24
   const m = Math.round(minutes % 60)
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-function timeToMinutes(timeStr) {
+export function timeToMinutes(timeStr) {
   const [h, m] = timeStr.split(':').map(Number)
   return h * 60 + m
 }
 
-function getRouteTurnaround(config, routeType) {
+export function roundToNearest10(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number)
+  const totalMin = h * 60 + m
+  const rounded = Math.round(totalMin / 10) * 10
+  const rh = Math.floor(rounded / 60) % 24
+  const rm = rounded % 60
+  return `${String(rh).padStart(2, '0')}:${String(rm).padStart(2, '0')}`
+}
+
+export function getRouteTurnaround(config, routeType) {
   return config.turnaround[routeType] || config.turnaround.medium
 }
 
@@ -86,74 +95,90 @@ export function generateRotation(baseAirport, airports, dateStr, startTime, airl
   const shuffledOutbound = [...outboundRoutes].sort(() => rand() - 0.5)
 
   if (roundTrip) {
-    const route = shuffledOutbound.find(r => airports.find(a => a.icao === r.to))
-    if (!route) return []
-    const dest = airports.find(a => a.icao === route.to)
-    if (!dest) return []
+    const validRoutes = shuffledOutbound.filter(r => airports.find(a => a.icao === r.to))
 
-    const legs = []
-    let currentTime = startTime
-    let totalFlightMinutes = 0
+    for (const route of validRoutes) {
+      const dest = airports.find(a => a.icao === route.to)
+      if (!dest) continue
 
-    const outboundDist = getDistanceNM(base.lat, base.lon, dest.lat, dest.lon)
-    const outboundBlock = getBlockTime(outboundDist)
-    const outboundBlockMin = Math.round(outboundBlock * 60)
+      const outboundDist = getDistanceNM(base.lat, base.lon, dest.lat, dest.lon)
+      const outboundBlock = getBlockTime(outboundDist)
+      const outboundBlockMin = Math.round(outboundBlock * 60)
 
-    if (totalFlightMinutes + outboundBlockMin > maxTimeMinutes) return []
-    const outboundArrival = addTimeToDate(dateStr, currentTime, outboundBlock)
-    const outboundNum = getFlightNum(config, route.type, rand)
+      if (outboundBlockMin > maxTimeMinutes) continue
 
-    legs.push({
-      legNumber: 1,
-      flightNumber: `${config.flightPrefix}${outboundNum}`,
-      departure: baseAirport,
-      departureCity: base.city,
-      arrival: route.to,
-      arrivalCity: dest.city,
-      departureTime: currentTime,
-      arrivalTime: outboundArrival,
-      blockTime: outboundBlock,
-      distance: outboundDist,
-      date: dateStr,
-      airline: airlineName,
-      status: 'Scheduled',
-    })
-    totalFlightMinutes += outboundBlockMin
+      const reverseRoute = config.routes.find(
+        r => r.from === route.to && r.to === baseAirport
+      )
+      const returnRouteType = reverseRoute ? reverseRoute.type : route.type
+      const turnaroundMin = getRouteTurnaround(config, returnRouteType)
+      const outboundArrival = addTimeToDate(dateStr, startTime, outboundBlock)
+      const returnDepMin = timeToMinutes(outboundArrival) + turnaroundMin
+      const returnDep = minutesToTime(returnDepMin)
 
-    if (maxLegs < 2) return legs
+      const returnDist = getDistanceNM(dest.lat, dest.lon, base.lat, base.lon)
+      const returnBlock = getBlockTime(returnDist)
+      const returnBlockMin = Math.round(returnBlock * 60)
+      const totalMin = outboundBlockMin + returnBlockMin
 
-    const reverseRoute = config.routes.find(
-      r => r.from === route.to && r.to === baseAirport
-    )
-    const returnRouteType = reverseRoute ? reverseRoute.type : route.type
-    const turnaroundMin = getRouteTurnaround(config, returnRouteType)
-    const returnDepMin = timeToMinutes(outboundArrival) + turnaroundMin
-    const returnDep = minutesToTime(returnDepMin)
+      if (totalMin > maxTimeMinutes) continue
 
-    const returnDist = getDistanceNM(dest.lat, dest.lon, base.lat, base.lon)
-    const returnBlock = getBlockTime(returnDist)
-    const returnBlockMin = Math.round(returnBlock * 60)
+      if (maxLegs < 2) {
+        return [{
+          legNumber: 1,
+          flightNumber: `${config.flightPrefix}${getFlightNum(config, route.type, rand)}`,
+          departure: baseAirport,
+          departureCity: base.city,
+          arrival: route.to,
+          arrivalCity: dest.city,
+          departureTime: startTime,
+          arrivalTime: roundToNearest10(outboundArrival),
+          blockTime: outboundBlock,
+          distance: outboundDist,
+          date: dateStr,
+          airline: airlineName,
+          status: 'Scheduled',
+        }]
+      }
 
-    if (totalFlightMinutes + returnBlockMin > maxTimeMinutes) return legs
-    const returnArrival = addTimeToDate(dateStr, returnDep, returnBlock)
+      const outboundNum = getFlightNum(config, route.type, rand)
+      const returnArrival = addTimeToDate(dateStr, returnDep, returnBlock)
 
-    legs.push({
-      legNumber: 2,
-      flightNumber: `${config.flightPrefix}${outboundNum + 1}`,
-      departure: route.to,
-      departureCity: dest.city,
-      arrival: baseAirport,
-      arrivalCity: base.city,
-      departureTime: returnDep,
-      arrivalTime: returnArrival,
-      blockTime: returnBlock,
-      distance: returnDist,
-      date: dateStr,
-      airline: airlineName,
-      status: 'Scheduled',
-    })
+      return [
+        {
+          legNumber: 1,
+          flightNumber: `${config.flightPrefix}${outboundNum}`,
+          departure: baseAirport,
+          departureCity: base.city,
+          arrival: route.to,
+          arrivalCity: dest.city,
+          departureTime: startTime,
+          arrivalTime: roundToNearest10(outboundArrival),
+          blockTime: outboundBlock,
+          distance: outboundDist,
+          date: dateStr,
+          airline: airlineName,
+          status: 'Scheduled',
+        },
+        {
+          legNumber: 2,
+          flightNumber: `${config.flightPrefix}${outboundNum + 1}`,
+          departure: route.to,
+          departureCity: dest.city,
+          arrival: baseAirport,
+          arrivalCity: base.city,
+          departureTime: returnDep,
+          arrivalTime: roundToNearest10(returnArrival),
+          blockTime: returnBlock,
+          distance: returnDist,
+          date: dateStr,
+          airline: airlineName,
+          status: 'Scheduled',
+        },
+      ]
+    }
 
-    return legs
+    return []
   }
 
   const legs = []
@@ -169,30 +194,59 @@ export function generateRotation(baseAirport, airports, dateStr, startTime, airl
     let nextAirport, nextAirportData, routeType
 
     if (i === 0) {
-      const route = shuffledOutbound.find(r => !visited.has(r.to))
-      if (!route) break
-      nextAirport = route.to
-      nextAirportData = airports.find(a => a.icao === nextAirport)
-      routeType = route.type
+      const candidates = shuffledOutbound.filter(r => !visited.has(r.to))
+      const sorted = candidates.sort((a, b) => {
+        const da = airports.find(a2 => a2.icao === a.to)
+        const db = airports.find(a2 => a2.icao === b.to)
+        if (!da || !db) return 0
+        return getDistanceNM(base.lat, base.lon, da.lat, da.lon) -
+               getDistanceNM(base.lat, base.lon, db.lat, db.lon)
+      })
+      let found = false
+      for (const route of sorted) {
+        const dest = airports.find(a2 => a2.icao === route.to)
+        if (!dest) continue
+        const dist = getDistanceNM(base.lat, base.lon, dest.lat, dest.lon)
+        const blockMin = Math.round(getBlockTime(dist) * 60)
+        if (totalFlightMinutes + blockMin <= maxTimeMinutes) {
+          nextAirport = route.to
+          nextAirportData = dest
+          routeType = route.type
+          found = true
+          break
+        }
+      }
+      if (!found) break
     } else {
       const allRoutesFromCurrent = getRoutesFromAirport(airlineName, currentAirport)
-      const candidates = allRoutesFromCurrent.filter(
-        r => r.to !== currentAirport && !visited.has(r.to)
-      )
+      const candidates = allRoutesFromCurrent.filter(r => r.to !== currentAirport)
       if (candidates.length === 0) break
-      const route = candidates[Math.floor(rand() * candidates.length)]
-      nextAirport = route.to
-      nextAirportData = airports.find(a => a.icao === nextAirport)
-      routeType = route.type
+
+      const unvisited = candidates.filter(r => !visited.has(r.to))
+      const pool = unvisited.length > 0 ? unvisited : candidates
+
+      let found = false
+      const shuffledPool = [...pool].sort(() => rand() - 0.5)
+      for (const route of shuffledPool) {
+        const dest = airports.find(a2 => a2.icao === route.to)
+        if (!dest) continue
+        const dist = getDistanceNM(currentAirportData.lat, currentAirportData.lon, dest.lat, dest.lon)
+        const blockMin = Math.round(getBlockTime(dist) * 60)
+        if (totalFlightMinutes + blockMin <= maxTimeMinutes) {
+          nextAirport = route.to
+          nextAirportData = dest
+          routeType = route.type
+          found = true
+          break
+        }
+      }
+      if (!found) break
     }
 
     if (!nextAirportData) break
 
     const dist = getDistanceNM(currentAirportData.lat, currentAirportData.lon, nextAirportData.lat, nextAirportData.lon)
     const blockTime = getBlockTime(dist)
-    const blockMin = Math.round(blockTime * 60)
-
-    if (totalFlightMinutes + blockMin > maxTimeMinutes) break
 
     const arrival = addTimeToDate(dateStr, currentTime, blockTime)
     const turnaroundMin = getRouteTurnaround(config, routeType)
@@ -207,7 +261,7 @@ export function generateRotation(baseAirport, airports, dateStr, startTime, airl
       arrival: nextAirport,
       arrivalCity: nextAirportData.city,
       departureTime: currentTime,
-      arrivalTime: arrival,
+      arrivalTime: roundToNearest10(arrival),
       blockTime: blockTime,
       distance: dist,
       date: dateStr,
@@ -215,7 +269,7 @@ export function generateRotation(baseAirport, airports, dateStr, startTime, airl
       status: 'Scheduled',
     })
     legIndex++
-    totalFlightMinutes += blockMin
+    totalFlightMinutes += Math.round(blockTime * 60)
 
     const arrMin = timeToMinutes(arrival)
     const nextDepMin = arrMin + turnaroundMin
@@ -245,68 +299,69 @@ function generateFallbackRotation(baseAirport, airports, dateStr, startTime, air
   const shuffled = [...destinations].sort(() => rand() - 0.5)
 
   if (roundTrip) {
-    const dest = shuffled[0]
-    if (!dest) return []
+    const sorted = [...shuffled].sort((a, b) =>
+      getDistanceNM(base.lat, base.lon, a.lat, a.lon) -
+      getDistanceNM(base.lat, base.lon, b.lat, b.lon)
+    )
 
-    const legs = []
-    let currentTime = startTime
-    let totalFlightMinutes = 0
+    for (const dest of sorted) {
+      const outboundDist = getDistanceNM(base.lat, base.lon, dest.lat, dest.lon)
+      const outboundBlock = getBlockTime(outboundDist)
+      const outboundBlockMin = Math.round(outboundBlock * 60)
 
-    const outboundDist = getDistanceNM(base.lat, base.lon, dest.lat, dest.lon)
-    const outboundBlock = getBlockTime(outboundDist)
-    const outboundBlockMin = Math.round(outboundBlock * 60)
+      if (outboundBlockMin > maxTimeMinutes) continue
 
-    if (totalFlightMinutes + outboundBlockMin > maxTimeMinutes) return []
-    const outboundArrival = addTimeToDate(dateStr, currentTime, outboundBlock)
-    const outboundNum = getFlightNum(config, 'medium', rand)
+      const turnaroundMin = config.turnaround.medium || 45
+      const outboundArrival = addTimeToDate(dateStr, startTime, outboundBlock)
+      const returnDepMin = timeToMinutes(outboundArrival) + turnaroundMin
+      const returnDep = minutesToTime(returnDepMin)
 
-    legs.push({
-      legNumber: 1,
-      flightNumber: `${config.flightPrefix || airlineName.substring(0, 2).toUpperCase()}${outboundNum}`,
-      departure: baseAirport,
-      departureCity: base.city,
-      arrival: dest.icao,
-      arrivalCity: dest.city,
-      departureTime: currentTime,
-      arrivalTime: outboundArrival,
-      blockTime: outboundBlock,
-      distance: outboundDist,
-      date: dateStr,
-      airline: airlineName,
-      status: 'Scheduled',
-    })
-    totalFlightMinutes += outboundBlockMin
+      const returnDist = getDistanceNM(dest.lat, dest.lon, base.lat, base.lon)
+      const returnBlock = getBlockTime(returnDist)
+      const returnBlockMin = Math.round(returnBlock * 60)
+      const totalMin = outboundBlockMin + returnBlockMin
 
-    if (maxLegs < 2) return legs
+      if (totalMin > maxTimeMinutes) continue
 
-    const turnaroundMin = config.turnaround.medium || 45
-    const returnDepMin = timeToMinutes(outboundArrival) + turnaroundMin
-    const returnDep = minutesToTime(returnDepMin)
+      const prefix = config.flightPrefix || airlineName.substring(0, 2).toUpperCase()
+      const outboundNum = getFlightNum(config, 'medium', rand)
+      const returnArrival = addTimeToDate(dateStr, returnDep, returnBlock)
 
-    const returnDist = getDistanceNM(dest.lat, dest.lon, base.lat, base.lon)
-    const returnBlock = getBlockTime(returnDist)
-    const returnBlockMin = Math.round(returnBlock * 60)
+      return [
+        {
+          legNumber: 1,
+          flightNumber: `${prefix}${outboundNum}`,
+          departure: baseAirport,
+          departureCity: base.city,
+          arrival: dest.icao,
+          arrivalCity: dest.city,
+          departureTime: startTime,
+          arrivalTime: roundToNearest10(outboundArrival),
+          blockTime: outboundBlock,
+          distance: outboundDist,
+          date: dateStr,
+          airline: airlineName,
+          status: 'Scheduled',
+        },
+        {
+          legNumber: 2,
+          flightNumber: `${prefix}${outboundNum + 1}`,
+          departure: dest.icao,
+          departureCity: dest.city,
+          arrival: baseAirport,
+          arrivalCity: base.city,
+          departureTime: returnDep,
+          arrivalTime: roundToNearest10(returnArrival),
+          blockTime: returnBlock,
+          distance: returnDist,
+          date: dateStr,
+          airline: airlineName,
+          status: 'Scheduled',
+        },
+      ]
+    }
 
-    if (totalFlightMinutes + returnBlockMin > maxTimeMinutes) return legs
-    const returnArrival = addTimeToDate(dateStr, returnDep, returnBlock)
-
-    legs.push({
-      legNumber: 2,
-      flightNumber: `${config.flightPrefix || airlineName.substring(0, 2).toUpperCase()}${outboundNum + 1}`,
-      departure: dest.icao,
-      departureCity: dest.city,
-      arrival: baseAirport,
-      arrivalCity: base.city,
-      departureTime: returnDep,
-      arrivalTime: returnArrival,
-      blockTime: returnBlock,
-      distance: returnDist,
-      date: dateStr,
-      airline: airlineName,
-      status: 'Scheduled',
-    })
-
-    return legs
+    return []
   }
 
   const legs = []
@@ -327,7 +382,7 @@ function generateFallbackRotation(baseAirport, airports, dateStr, startTime, air
       nextAirport = dest.icao
       nextAirportData = dest
     } else {
-      const candidates = shuffled.filter(d => !visited.has(d.icao))
+      const candidates = shuffled.filter(d => d.icao !== currentAirport)
       if (candidates.length === 0) break
       const dest = candidates[Math.floor(rand() * candidates.length)]
       nextAirport = dest.icao
@@ -354,7 +409,7 @@ function generateFallbackRotation(baseAirport, airports, dateStr, startTime, air
       arrival: nextAirport,
       arrivalCity: nextAirportData.city,
       departureTime: currentTime,
-      arrivalTime: arrival,
+      arrivalTime: roundToNearest10(arrival),
       blockTime: blockTime,
       distance: dist,
       date: dateStr,

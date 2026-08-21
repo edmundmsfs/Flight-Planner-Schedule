@@ -20,12 +20,19 @@ export function useAuth() {
 
   useEffect(() => {
     if (!session) return
+    let cancelled = false
     async function fetchProfile() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', session.user.id)
         .single()
+      if (cancelled) return
+      if (error) {
+        console.warn('Profile fetch error:', error.message)
+        setCaptainName(session.user.email.split('@')[0])
+        return
+      }
       if (data?.full_name) {
         setCaptainName(data.full_name)
       } else {
@@ -33,6 +40,7 @@ export function useAuth() {
       }
     }
     fetchProfile()
+    return () => { cancelled = true }
   }, [session])
 
   const signIn = useCallback(async (email, password, fullName) => {

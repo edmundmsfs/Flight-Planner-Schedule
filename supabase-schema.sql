@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS airports (
   icao TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   city TEXT NOT NULL,
+  country TEXT,
   lat DOUBLE PRECISION NOT NULL,
   lon DOUBLE PRECISION NOT NULL,
   runway INTEGER
@@ -67,22 +68,34 @@ CREATE POLICY "Anyone can view airports" ON airports FOR SELECT USING (true);
 -- Schedules: users can only manage their own
 CREATE POLICY "Users can view own schedules" ON schedules FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own schedules" ON schedules FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own schedules" ON schedules FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own schedules" ON schedules FOR DELETE USING (auth.uid() = user_id);
 
--- Sample airport data for Indonesia
-INSERT INTO airports (icao, name, city, lat, lon, runway) VALUES
-  ('WIII', 'Soekarno-Hatta International Airport', 'Jakarta', -6.1256, 106.6558, 3905),
-  ('WADD', 'Ngurah Rai International Airport', 'Bali', -8.7482, 115.1672, 3000),
-  ('WARR', 'Juanda International Airport', 'Surabaya', -7.3798, 112.7868, 3000),
-  ('WAME', 'Kualanamu International Airport', 'Medan', 3.6422, 98.8853, 3750),
-  ('WAHQ', 'Sultan Hasanuddin International Airport', 'Makassar', -5.0616, 119.5542, 2500),
-  ('WARJ', 'Adisumarmo International Airport', 'Solo', -7.5152, 110.7569, 2600),
-  ('WARP', 'Achmad Yani International Airport', 'Semarang', -6.9724, 110.3753, 2600),
-  ('WIOO', 'Supadio International Airport', 'Pontianak', -0.1507, 109.3711, 2250),
-  ('WAOO', 'Syamsudin Noor International Airport', 'Banjarmasin', -3.4424, 114.7625, 2250),
-  ('WIDD', 'Hang Nadim International Airport', 'Batam', 1.0456, 104.2217, 4000),
-  ('WADL', 'Lombok International Airport', 'Lombok', -8.7582, 116.2750, 2750),
-  ('WIPA', 'Sultan Thaha Airport', 'Jambi', -1.6380, 103.6440, 2400),
-  ('WITT', 'Sultan Iskandar Muda International Airport', 'Banda Aceh', 5.5225, 95.4003, 3500),
-  ('WAKK', 'Sultan Hasanuddin International Airport', 'Makassar', 5.0644, 119.5347, 2500)
+-- Sample airport data
+INSERT INTO airports (icao, name, city, country, lat, lon, runway) VALUES
+  ('WIII', 'Soekarno-Hatta', 'Jakarta', 'Indonesia', -6.1255, 106.6558, 3660),
+  ('WADD', 'I Gusti Ngurah Rai', 'Bali', 'Indonesia', -8.7481, 115.1672, 3000),
+  ('WARR', 'Juanda', 'Surabaya', 'Indonesia', -7.3798, 112.7871, 3000),
+  ('WIMM', 'Kualanamu', 'Medan', 'Indonesia', 3.6422, 98.8737, 3750),
+  ('WAAA', 'Sultan Hasanuddin', 'Makassar', 'Indonesia', -5.0616, 119.5540, 3100),
+  ('WAHI', 'Jenderal Ahmad Yani', 'Semarang', 'Indonesia', -6.9723, 110.3758, 2560),
+  ('WIOO', 'Supadio', 'Pontianak', 'Indonesia', -0.1507, 109.4045, 2250),
+  ('WAOO', 'Syamsudin Noor', 'Banjarmasin', 'Indonesia', -3.4409, 114.7612, 2500),
+  ('WIDN', 'Hang Nadim', 'Batam', 'Indonesia', 1.1211, 104.1190, 4040),
+  ('WADL', 'Zainuddin Abdul Madjid', 'Lombok', 'Indonesia', -8.7618, 116.2750, 2750),
+  ('WAHH', 'Yogyakarta International', 'Yogyakarta', 'Indonesia', -7.9009, 110.0577, 3250),
+  ('WAJJ', 'Sentani', 'Jayapura', 'Indonesia', -2.5765, 140.5159, 3000),
+  ('WALL', 'Sultan Aji Muhammad Sulaiman', 'Balikpapan', 'Indonesia', -1.2675, 116.8944, 2500),
+  ('WAMM', 'Sam Ratulangi', 'Manado', 'Indonesia', 1.5493, 124.9261, 2650),
+  ('WIBB', 'Sultan Syarif Kasim II', 'Pekanbaru', 'Indonesia', 0.4611, 101.4480, 2600),
+  ('WIPP', 'Sultan Mahmud Badaruddin II', 'Palembang', 'Indonesia', -2.8981, 104.7001, 3000),
+  ('WARJ', 'Adisumarmo', 'Solo', 'Indonesia', -7.5152, 110.7569, 2600),
+  ('WIPA', 'Sultan Thaha', 'Jambi', 'Indonesia', -1.6380, 103.6440, 2400),
+  ('WITT', 'Sultan Iskandar Muda', 'Banda Aceh', 'Indonesia', 5.5225, 95.4003, 3500),
+  ('VTBS', 'Suvarnabhumi', 'Bangkok', 'Thailand', 13.6811, 100.7472, 4000),
+  ('VTBU', 'U-Tapao Rayong-Pattaya', 'Pattaya', 'Thailand', 12.6799, 101.0051, 3505),
+  ('VTSP', 'Phuket International', 'Phuket', 'Thailand', 8.1132, 98.3168, 3000),
+  ('WMKK', 'Kuala Lumpur International', 'Kuala Lumpur', 'Malaysia', 2.7455, 101.7099, 4124),
+  ('WMKP', 'Penang International', 'Penang', 'Malaysia', 5.2971, 100.2768, 3352),
+  ('WSSS', 'Changi', 'Singapore', 'Singapore', 1.3644, 103.9915, 4000)
 ON CONFLICT (icao) DO NOTHING;

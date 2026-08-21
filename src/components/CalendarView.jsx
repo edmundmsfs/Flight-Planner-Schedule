@@ -1,29 +1,27 @@
 import { useState, useMemo } from 'react'
+import FlightDetailModal from './FlightDetailModal'
+import { AIRLINE_COLORS, DEFAULT_COLOR } from '../utils/airlineColors'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const AIRLINE_COLORS = {
-  'Citilink': { bg: '#ecfdf5', border: '#6ee7b7', text: '#065f46', dot: '#10b981' },
-  'AirAsia Indonesia': { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', dot: '#ef4444' },
-  'Batik Air Indonesia': { bg: '#fefce8', border: '#fde047', text: '#854d0e', dot: '#eab308' },
-  'Pelita Air': { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af', dot: '#3b82f6' },
-}
-const DEFAULT_COLOR = { bg: '#f8fafc', border: '#cbd5e1', text: '#475569', dot: '#94a3b8' }
 
 function getDateParts(d) {
   return { year: d.getFullYear(), month: d.getMonth() }
 }
 
-export default function CalendarView({ schedules }) {
+const STATUS_CYCLE = ['Scheduled', 'Boarded', 'Departed', 'Arrived', 'Cancelled']
+
+export default function CalendarView({ schedules, airports, onDelete, onUpdate }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
+  const [selectedFlight, setSelectedFlight] = useState(null)
 
   const { year, month } = getDateParts(currentDate)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstDayOfMonth = new Date(year, month, 0).getDay()
+  const firstDayOfMonth = new Date(year, month, 1).getDay()
 
   const today = new Date()
   const isToday = (day) =>
@@ -152,15 +150,30 @@ export default function CalendarView({ schedules }) {
                 </div>
               ) : (
                 <div className="cal-detail-list">
-                  {selectedDaySchedules.map((s, idx) => {
-                    const color = AIRLINE_COLORS[s.airline] || DEFAULT_COLOR
-                    return (
-                      <div key={idx} className="cal-detail-card" style={{ borderLeftColor: color.dot }}>
-                        <div className="cal-detail-card-top">
+                    {selectedDaySchedules.map((s, idx) => {
+                      const color = AIRLINE_COLORS[s.airline] || DEFAULT_COLOR
+                      return (
+                        <div key={idx} className="cal-detail-card" style={{ borderLeftColor: color.dot }} onClick={() => setSelectedFlight(s)}>
+                          <div className="cal-detail-card-top">
                           <span className="cal-detail-flight" style={{ color: color.dot }}>{s.flight_number}</span>
-                          <span className="cal-detail-airline-tag" style={{ background: color.bg, color: color.text }}>{s.airline}</span>
+                          <div className="cal-detail-card-actions">
+                            <button className="cal-card-status-btn" onClick={(e) => {
+                              e.stopPropagation()
+                              const idx = STATUS_CYCLE.indexOf(s.status || 'Scheduled')
+                              const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]
+                              onUpdate(s.id, { status: next })
+                            }} title={`Status: ${s.status || 'Scheduled'}`}>
+                              {s.status === 'Cancelled' ? '❌' : s.status === 'Arrived' ? '🟢' : s.status === 'Departed' ? '🛫' : s.status === 'Boarded' ? '🧑‍✈️' : '🔵'}
+                            </button>
+                            <button className="cal-card-delete-btn" onClick={(e) => {
+                              e.stopPropagation()
+                              onDelete(s.id)
+                            }} title="Delete flight">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                          </div>
                         </div>
-                        <div className="cal-detail-route">
+                        <div className="cal-detail-route" onClick={() => setSelectedFlight(s)}>
                           <div className="cal-detail-airport">
                             <span className="cal-detail-time">{s.departure_time}</span>
                             <span className="cal-detail-icao">{s.departure}</span>
@@ -178,6 +191,8 @@ export default function CalendarView({ schedules }) {
                           </div>
                         </div>
                         <div className="cal-detail-meta">
+                          <span className="cal-detail-airline-tag" style={{ background: color.bg, color: color.text }}>{s.airline}</span>
+                          <span className={`status-badge status-badge--${(s.status || 'Scheduled').toLowerCase()}`}>{s.status || 'Scheduled'}</span>
                           <span>{s.block_time}h block</span>
                           <span>{s.distance} NM</span>
                         </div>
@@ -216,6 +231,13 @@ export default function CalendarView({ schedules }) {
           <span className="cal-stat-label">{monthStats.distance.toLocaleString()} NM total</span>
         </div>
       </div>
+      {selectedFlight && (
+        <FlightDetailModal
+          flight={selectedFlight}
+          airports={airports || []}
+          onClose={() => setSelectedFlight(null)}
+        />
+      )}
     </div>
   )
 }
