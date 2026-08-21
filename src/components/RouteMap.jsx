@@ -52,7 +52,7 @@ function calcRotation(lat1, lon1, lat2, lon2) {
   const y = Math.sin(dLon) * Math.cos(toRad(lat2))
   const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
     Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon)
-  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360 + 315) % 360
 }
 
 export default function RouteMap({ legs, airports }) {
