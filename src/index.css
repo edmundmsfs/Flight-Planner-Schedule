@@ -68,6 +68,7 @@ body, html, #root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--color-text);
   overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ===== LAYOUT ===== */
@@ -79,14 +80,15 @@ body, html, #root {
   overflow: hidden;
 }
 
-.main-content {
-  flex: 1;
-  background-color: var(--color-bg);
-  padding: 40px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
-}
+  .main-content {
+    flex: 1;
+    padding: 16px;
+    padding-top: calc(60px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 
 .section-title {
   color: var(--color-text);
@@ -397,6 +399,7 @@ body, html, #root {
 
 .sidebar-footer {
   padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-sidebar-hover);
   display: flex;
   flex-direction: column;
@@ -564,6 +567,7 @@ body, html, #root {
 .auth-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   background-color: var(--color-surface);
 }
@@ -4395,7 +4399,7 @@ body, html, #root {
 .mobile-menu-btn {
   display: none;
   position: fixed;
-  top: 12px;
+  top: calc(12px + env(safe-area-inset-top));
   left: 12px;
   z-index: 99;
   width: 40px;
@@ -4427,6 +4431,7 @@ body, html, #root {
     display: flex;
     align-items: center;
     justify-content: center;
+    top: calc(12px + env(safe-area-inset-top));
   }
 
   /* Sidebar overlay */
@@ -4439,6 +4444,7 @@ body, html, #root {
     bottom: 0;
     background: rgba(0,0,0,0.5);
     z-index: 99;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Layout */
@@ -4447,10 +4453,9 @@ body, html, #root {
   }
   .sidebar {
     position: fixed;
-    top: 0;
+    top: env(safe-area-inset-top);
     left: 0;
-    height: 100vh;
-    height: 100dvh;
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     z-index: 100;
     transition: transform 0.3s ease;
   }
@@ -4477,6 +4482,7 @@ body, html, #root {
   }
   .sidebar-footer {
     padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
     gap: 6px;
   }
   .main-content {
