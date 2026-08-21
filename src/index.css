@@ -284,9 +284,35 @@ body, html, #root {
   transition: width 0.3s ease;
 }
 
-.sidebar--open {
-  width: 260px;
-}
+  .sidebar--open {
+    width: 260px;
+    transform: translateX(0);
+    overflow-y: auto;
+  }
+  .sidebar--closed {
+    width: 260px;
+    transform: translateX(-100%);
+  }
+  .sidebar-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-sidebar-bg);
+    padding: 12px;
+  }
+  .sidebar-user {
+    padding: 8px 12px;
+  }
+  .sidebar-nav {
+    padding: 4px 0;
+  }
+  .sidebar-menu-item {
+    padding: 10px 12px;
+  }
+  .sidebar-footer {
+    padding: 12px;
+    gap: 6px;
+  }
 
 .sidebar--closed {
   width: 70px;
@@ -370,7 +396,6 @@ body, html, #root {
 }
 
 .sidebar-footer {
-  margin-top: auto;
   padding: 20px;
   border-top: 1px solid var(--color-sidebar-hover);
   display: flex;
@@ -439,15 +464,6 @@ body, html, #root {
 }
 .sidebar-theme-toggle:hover {
   background: var(--color-sidebar-hover);
-}
-
-.sidebar-footer-inline {
-  padding: 12px;
-  border-top: 1px solid var(--color-sidebar-hover);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: auto;
 }
 
 .btn-danger {
@@ -4119,7 +4135,7 @@ body, html, #root {
   font-size: 0.6rem;
 }
 
-/* ===== RESPONSIVE (old — rules merged into GLOBAL MOBILE FIXES below) ===== */
+/* ===== FLIGHT DETAIL MODAL ===== */
 
 /* ===== FLIGHT DETAIL MODAL ===== */
 .fdm-overlay {
@@ -4441,37 +4457,27 @@ body, html, #root {
   .sidebar--open {
     width: 260px;
     transform: translateX(0);
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
   }
   .sidebar--closed {
     width: 260px;
     transform: translateX(-100%);
   }
   .sidebar-header {
-    flex-shrink: 0;
     padding: 12px;
   }
   .sidebar-user {
-    flex-shrink: 0;
     padding: 8px 12px;
   }
   .sidebar-nav {
-    flex: 1;
-    overflow-y: auto;
     padding: 4px 0;
   }
   .sidebar-menu-item {
     padding: 10px 12px;
   }
   .sidebar-footer {
-    flex-shrink: 0;
     padding: 12px;
     gap: 6px;
-  }
-  .sidebar-footer-inline {
-    padding: 10px;
-    gap: 4px;
   }
   .main-content {
     padding: 16px;
