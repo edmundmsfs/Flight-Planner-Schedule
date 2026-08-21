@@ -36,18 +36,31 @@ export default function Sidebar({ isOpen, onToggle, activeMenu, onMenuChange, ca
             {isOpen && <span>{menu.label}</span>}
           </div>
         ))}
+
+        {isOpen && (
+          <div className="sidebar-footer-inline">
+            <button onClick={onToggleDarkMode} className="sidebar-theme-toggle" title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+              {darkMode ? '☀️' : '🌙'}
+              <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+            <button onClick={onLogout} className="btn-logout">
+              <span>🚪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        )}
       </nav>
 
-      <div className="sidebar-footer">
-        <button onClick={onToggleDarkMode} className="sidebar-theme-toggle" title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
-          {darkMode ? '☀️' : '🌙'}
-          {isOpen && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-        </button>
-        <button onClick={onLogout} className="btn-logout">
-          <span>🚪</span>
-          {isOpen && <span>Logout</span>}
-        </button>
-      </div>
+      {!isOpen && (
+        <div className="sidebar-footer">
+          <button onClick={onToggleDarkMode} className="sidebar-theme-toggle" title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          <button onClick={onLogout} className="btn-logout" title="Logout">
+            <span>🚪</span>
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
