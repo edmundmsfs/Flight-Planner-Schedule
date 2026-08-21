@@ -74,7 +74,9 @@ body, html, #root {
 .layout {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
 }
 
 .main-content {
@@ -82,6 +84,8 @@ body, html, #root {
   background-color: var(--color-bg);
   padding: 40px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .section-title {
@@ -3440,6 +3444,7 @@ body, html, #root {
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  overflow-x: auto;
 }
 .apt-table {
   width: 100%;
@@ -4104,65 +4109,7 @@ body, html, #root {
   font-size: 0.6rem;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .airline-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .planner-params-grid {
-    grid-template-columns: 1fr;
-  }
-  .main-content {
-    padding: 20px;
-  }
-  .auth-form-panel {
-    min-width: 100%;
-  }
-  .auth-hero {
-    display: none;
-  }
-  .history-header {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .fp-content {
-    padding: 20px;
-  }
-  .fp-card {
-    padding: 20px;
-  }
-  .fp-progress {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .fp-progress-line {
-    display: none;
-  }
-  .fp-plane svg {
-    width: 60px;
-    height: 60px;
-  }
-  .fp-plane--2 svg {
-    width: 40px;
-    height: 40px;
-  }
-  .welcome-content {
-    padding: 24px 20px;
-  }
-  .welcome-title {
-    font-size: 1.5rem;
-  }
-  .welcome-plane {
-    display: none;
-  }
-  .welcome-stats {
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .welcome-stat-divider {
-    display: none;
-  }
-}
+/* ===== RESPONSIVE (old — rules merged into GLOBAL MOBILE FIXES below) ===== */
 
 /* ===== FLIGHT DETAIL MODAL ===== */
 .fdm-overlay {
@@ -4477,6 +4424,7 @@ body, html, #root {
     top: 0;
     left: 0;
     height: 100vh;
+    height: 100dvh;
     z-index: 100;
     transition: transform 0.3s ease;
   }
@@ -4492,6 +4440,14 @@ body, html, #root {
     padding: 16px;
     padding-top: 60px;
     width: 100%;
+  }
+
+  /* Auth */
+  .auth-form-panel {
+    min-width: 100%;
+  }
+  .auth-hero {
+    display: none;
   }
 
   /* Welcome banner */
@@ -4577,6 +4533,39 @@ body, html, #root {
   .fp-route-summary {
     flex-wrap: wrap;
     gap: 8px;
+  }
+  .fp {
+    min-height: auto;
+  }
+  .fp-content {
+    padding: 16px;
+  }
+  .fp-card {
+    padding: 16px;
+  }
+  .fp-title {
+    font-size: 1.3rem;
+  }
+  .airline-grid {
+    grid-template-columns: 1fr;
+  }
+  .planner-params-grid {
+    grid-template-columns: 1fr;
+  }
+  .fp-progress {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fp-progress-line {
+    display: none;
+  }
+  .fp-plane svg {
+    width: 60px;
+    height: 60px;
+  }
+  .fp-plane--2 svg {
+    width: 40px;
+    height: 40px;
   }
 
   /* Manual Route Builder */
