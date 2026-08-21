@@ -81,11 +81,19 @@ function AppContent() {
 
   return (
     <div className="layout">
+      {!isSidebarOpen && (
+        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)} aria-label="Open menu">
+          ☰
+        </button>
+      )}
+      {isSidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
+      )}
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         activeMenu={activeMenu}
-        onMenuChange={setActiveMenu}
+        onMenuChange={(menu) => { setActiveMenu(menu); if (window.innerWidth <= 768) setIsSidebarOpen(false) }}
         captainName={captainName}
         onLogout={signOut}
         darkMode={darkMode}
